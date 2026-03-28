@@ -1,0 +1,27 @@
+{
+  "name": "autogrimoire",
+  "version": "0.1.0",
+  "description": "Rule-bound repository agent prototype for local memory, task intake, and safe execution planning.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "autogrimoire": "dist/cli/main.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "start": "node dist/cli/main.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "agent",
+    "cli",
+    "task-execution",
+    "repository-memory"
+  ],
+  "dependencies": {},
+  "devDependencies": {}
+}

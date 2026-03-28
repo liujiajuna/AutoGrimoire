@@ -1,0 +1,8 @@
+{
+  "id": "TASK-001",
+  "title": "Add task validation safeguards",
+  "description": "Validate task ingestion and ensure malformed task payloads are rejected with clear errors.",
+  "requestedBy": "maintainer",
+  "priority": "high",
+  "tags": ["task-intake", "validation", "safety"]
+}

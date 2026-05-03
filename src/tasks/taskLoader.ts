@@ -17,7 +17,12 @@ function toStringArray(value: unknown): string[] | undefined {
     throw new Error("Task field 'tags' must be an array of strings when provided.");
   }
 
-  return value;
+  const normalizedTags = value.map((entry) => entry.trim());
+  if (normalizedTags.some((entry) => entry === "")) {
+    throw new Error("Task field 'tags' entries must be non-empty strings.");
+  }
+
+  return [...new Set(normalizedTags)];
 }
 
 function requireStringField(obj: Record<string, unknown>, field: string): string {
@@ -31,16 +36,23 @@ function requireStringField(obj: Record<string, unknown>, field: string): string
 
 function parsePriority(obj: Record<string, unknown>): TaskPriority {
   const value = obj.priority;
+  const normalizedValue = typeof value === "string" ? value.trim().toLowerCase() : value;
 
-  if (typeof value !== "string" || !VALID_PRIORITIES.includes(value as TaskPriority)) {
+  if (typeof normalizedValue !== "string" || !VALID_PRIORITIES.includes(normalizedValue as TaskPriority)) {
     throw new Error("Task field 'priority' must be one of: low, medium, high.");
   }
 
-  return value as TaskPriority;
+  return normalizedValue as TaskPriority;
 }
 
 export async function loadTaskFromFile(taskPath: string): Promise<TaskInput> {
-  const raw = await readFile(taskPath, "utf8");
+  let raw: string;
+  try {
+    raw = await readFile(taskPath, "utf8");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Unable to read task file '${taskPath}': ${message}`);
+  }
 
   let parsed: unknown;
   try {
@@ -61,7 +73,11 @@ export async function loadTaskFromFile(taskPath: string): Promise<TaskInput> {
     tags: toStringArray(parsed.tags)
   };
 
-  if (typeof parsed.requestedBy === "string" && parsed.requestedBy.trim() !== "") {
+  if (parsed.requestedBy !== undefined) {
+    if (typeof parsed.requestedBy !== "string" || parsed.requestedBy.trim() === "") {
+      throw new Error("Task field 'requestedBy' must be a non-empty string when provided.");
+    }
+
     task.requestedBy = parsed.requestedBy.trim();
   }
 

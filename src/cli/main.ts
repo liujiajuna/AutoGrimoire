@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { writeFile } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
 
 import { runEngine } from "../core/engine.js";
 import { loadMemoryFiles } from "../memory/fileMemory.js";
@@ -15,17 +16,34 @@ function printHelp(): void {
   console.log(`AutoGrimoire CLI
 
 Usage:
-  autogrimoire --task <path> [--memory <path>]... [--output <path>]
+  autogrimoire --task <path-to-task.json> [--memory <path>]... [--output <path>]
 
 Options:
-  --task    Path to task JSON file (required)
-  --memory  Path to memory/context file (.json, .md, .txt). Repeatable.
-  --output  Optional output file path for execution result JSON
+  --task    JSON task file (required)
+  --memory  Memory/context file (.json, .md, .markdown, or text). Repeatable.
+            Duplicate memory paths are ignored.
+  --output  Write execution result JSON to file and stdout
   --help    Show this help message
 `);
 }
 
-function parseArgs(argv: string[]): CliArgs {
+function readOptionValue(argv: string[], index: number, optionName: string): string {
+  const value = argv[index + 1];
+
+  if (!value || value.startsWith("--")) {
+    throw new Error(`Missing value for '${optionName}'. Use --help for usage.`);
+  }
+
+  return value;
+}
+
+function addUniqueValue(values: string[], value: string): void {
+  if (!values.includes(value)) {
+    values.push(value);
+  }
+}
+
+export function parseArgs(argv: string[]): CliArgs {
   const args: CliArgs = {
     memoryPaths: []
   };
@@ -39,22 +57,19 @@ function parseArgs(argv: string[]): CliArgs {
     }
 
     if (token === "--task") {
-      args.taskPath = argv[index + 1];
+      args.taskPath = readOptionValue(argv, index, "--task");
       index += 1;
       continue;
     }
 
     if (token === "--memory") {
-      const next = argv[index + 1];
-      if (next) {
-        args.memoryPaths.push(next);
-      }
+      addUniqueValue(args.memoryPaths, readOptionValue(argv, index, "--memory"));
       index += 1;
       continue;
     }
 
     if (token === "--output") {
-      args.outputPath = argv[index + 1];
+      args.outputPath = readOptionValue(argv, index, "--output");
       index += 1;
       continue;
     }
@@ -63,6 +78,15 @@ function parseArgs(argv: string[]): CliArgs {
   }
 
   return args;
+}
+
+async function writeOutputFile(outputPath: string, jsonOutput: string): Promise<void> {
+  try {
+    await writeFile(outputPath, `${jsonOutput}\n`, "utf8");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Unable to write output file '${outputPath}': ${message}`);
+  }
 }
 
 export async function main(argv: string[]): Promise<void> {
@@ -77,15 +101,20 @@ export async function main(argv: string[]): Promise<void> {
   const result = runEngine(task, memoryRecords);
 
   const jsonOutput = JSON.stringify(result, null, 2);
-  console.log(jsonOutput);
 
   if (parsed.outputPath) {
-    await writeFile(parsed.outputPath, `${jsonOutput}\n`, "utf8");
+    await writeOutputFile(parsed.outputPath, jsonOutput);
   }
+
+  console.log(jsonOutput);
 }
 
-main(process.argv.slice(2)).catch((error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(`AutoGrimoire CLI error: ${message}`);
-  process.exit(1);
-});
+const entryPoint = process.argv[1] ? pathToFileURL(process.argv[1]).href : undefined;
+
+if (import.meta.url === entryPoint) {
+  main(process.argv.slice(2)).catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`AutoGrimoire CLI error: ${message}`);
+    process.exit(1);
+  });
+}

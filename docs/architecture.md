@@ -4,8 +4,8 @@
 
 The MVP architecture is intentionally thin:
 - load local context,
-- load a structured task,
-- apply deterministic planning rules,
+- load and validate a structured task,
+- apply deterministic planning and safety rules,
 - emit inspectable output.
 
 ## Design principles
@@ -22,7 +22,7 @@ The MVP architecture is intentionally thin:
 CLI args
   -> Task Loader (JSON validation)
   -> Memory Loader (json/markdown/text)
-  -> Rule Engine (basic rules)
+  -> Rule Engine (basic planning and safety rules)
   -> Structured Execution Result (JSON)
 ```
 
@@ -30,11 +30,11 @@ CLI args
 
 - `src/cli/main.ts`
   - Parses command-line arguments.
-  - Handles help, runtime errors, and optional output file writing.
+  - Handles help, missing option values, duplicate memory paths, runtime errors, and optional output file writing.
 
 - `src/tasks/taskLoader.ts`
   - Reads task JSON.
-  - Validates required fields and normalizes values.
+  - Validates required fields, normalizes values, and reports malformed payloads clearly.
 
 - `src/memory/fileMemory.ts`
   - Loads context files.
@@ -42,7 +42,8 @@ CLI args
 
 - `src/rules/basicRules.ts`
   - Contains deterministic MVP rule checks.
-  - Produces warnings, risk level, and plan steps.
+  - Produces warnings, risk level, approval requirements, and plan steps.
+  - Flags short descriptions, missing memory, high priority tasks, dependency changes, external services, and broad repository changes.
 
 - `src/core/engine.ts`
   - Orchestrates task + memory through rules.
@@ -50,6 +51,10 @@ CLI args
 
 - `src/core/types.ts`
   - Defines shared data contracts.
+
+- `test/mvp.test.mjs`
+  - Uses Node built-in test tooling.
+  - Covers task loading, memory loading, rule output, and CLI behavior.
 
 ## Extensibility plan
 

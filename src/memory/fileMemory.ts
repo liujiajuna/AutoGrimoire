@@ -21,7 +21,14 @@ export async function loadMemoryFiles(paths: string[]): Promise<MemoryRecord[]> 
   const records: MemoryRecord[] = [];
 
   for (const filePath of paths) {
-    const content = await readFile(filePath, "utf8");
+    let content: string;
+    try {
+      content = await readFile(filePath, "utf8");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Unable to read memory file '${filePath}': ${message}`);
+    }
+
     records.push({
       path: filePath,
       kind: inferMemoryKind(filePath),

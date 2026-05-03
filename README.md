@@ -1,6 +1,6 @@
 # AutoGrimoire
 
-AutoGrimoire is a practical, rule-bound repository agent prototype.
+AutoGrimoire is a practical, rule-bound repository agent MVP.
 
 It is designed as an **automatic scribe for engineering projects**: it reads project context, accepts structured tasks, applies transparent safety and planning rules, and produces an inspectable execution plan.
 
@@ -22,11 +22,11 @@ AutoGrimoire starts from the opposite direction:
 This first version intentionally focuses on four core capabilities:
 
 1. **Repository memory/context loading**
-   - Load context from local JSON and Markdown files.
+   - Load context from local JSON, Markdown, and plain text files.
 2. **Task intake**
-   - Accept a task description from a local JSON file.
+   - Accept and validate a task description from a local JSON file.
 3. **Rule-based execution flow**
-   - Apply a deterministic rule pipeline to produce a plan.
+   - Apply deterministic planning and safety rules to produce a plan.
 4. **Safe, inspectable output**
    - Emit structured JSON showing decisions, warnings, and proposed actions.
 
@@ -48,6 +48,8 @@ This first version intentionally focuses on four core capabilities:
 │   ├── tasks/           # Task input loading/validation
 │   ├── rules/           # Deterministic planning/safety rules
 │   └── index.ts         # Library exports
+├── test/
+│   └── mvp.test.mjs     # Node built-in test coverage for the MVP flow
 ├── docs/
 │   └── architecture.md  # High-level system design
 ├── examples/
@@ -70,13 +72,20 @@ npm install
 npm run build
 ```
 
-### 3) Run with the included sample task
+### 3) Validate
+
+```bash
+npm run typecheck
+npm test
+```
+
+### 4) Run with the included sample task
 
 ```bash
 npm run start -- --task examples/sample-task.json
 ```
 
-### 4) Optionally provide additional memory files
+### 5) Optionally provide additional memory files
 
 ```bash
 npm run start -- \
@@ -87,6 +96,8 @@ npm run start -- \
 
 The CLI prints a JSON execution plan including:
 - normalized task data,
+- memory file summary,
+- deterministic rule decisions,
 - risk level,
 - warnings,
 - step-by-step action plan,
@@ -100,8 +111,8 @@ autogrimoire --task <path-to-task.json> [--memory <path>]... [--output <path>]
 
 Options:
 - `--task` (required): JSON task file.
-- `--memory` (optional, repeatable): context files (`.json`, `.md`, or plain text).
-- `--output` (optional): write execution result JSON to file instead of stdout-only.
+- `--memory` (optional, repeatable): context files (`.json`, `.md`, `.markdown`, or plain text). Duplicate paths are ignored.
+- `--output` (optional): write execution result JSON to file and stdout.
 
 ## Example task format
 
@@ -119,7 +130,7 @@ Options:
 ## Roadmap
 
 ### Near-term
-- Add richer rule packs (scope checks, dependency policy checks).
+- Expand rule packs beyond the MVP keyword checks.
 - Add markdown execution report output.
 - Add task history snapshots in local files.
 
@@ -135,3 +146,11 @@ Options:
 ## Contributing
 
 Start small and keep changes reviewable. Read `AGENTS.md` before making changes.
+
+Before finishing a change, run:
+
+```bash
+npm run typecheck
+npm run build
+npm test
+```
